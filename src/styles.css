@@ -1,0 +1,3431 @@
+/*
+ * Print-inspired look: warm paper, ink outlines, flat fills and solid offset
+ * shadows like slightly misregistered riso printing. Dark mode swaps the paper
+ * for true black with neutral grays and keeps the same accents.
+ */
+:root {
+  /* Palette */
+  --paper: #f3ecdd;
+  --ink: #2b2724;
+  --tomato: #d9573f;
+  --marigold: #edb13c;
+  --marigold-deep: #c9952a; /* the daily card's raised edge */
+  --fern: #5e8c5a;
+  --fern-deep: #46703f; /* behind paper text: about 5:1, where plain fern is about 3.4:1 */
+  --footer-green: #2a7a36; /* bolder green for the home footer and piano sheet: paper text about 4.5:1 */
+  --tomato-deep: #b8432e; /* behind paper text: about 4.6:1, where plain tomato is about 3.3:1 */
+  --riso: #3a62a0;
+  --pink: #e7a9a0;
+
+  /* Roles */
+  --bg: var(--paper);
+  --surface: #fbf8f2;
+  --surface-2: #ebe2cf;
+  --text: var(--ink);
+  --muted: #6e655b;
+  /* The home slogan: as quiet as 4.5:1 allows, which is --muted itself on paper. */
+  --slogan: #6e655b;
+  --gold-text: #7a5510; /* the streak and level chips' text: deep gold, 5.7:1 on paper (marigold itself is 2:1) */
+  --line: rgb(43 39 36 / 0.14);
+  --hover: color-mix(in srgb, var(--surface-2) 82%, var(--text)); /* keeps --text readable on hover */
+  --accent: var(--riso);
+  --accent-soft: color-mix(in srgb, var(--riso) 14%, var(--surface));
+  /*
+   * Note and key status on the skill map. Perfect is deep fern and Needs work deep
+   * tomato, both with paper text; Comfortable is solid marigold with ink text.
+   * Needs work is hatched: thin darker red stripes over deep tomato, so it reads
+   * apart from the solid fills even without color, and paper text stays readable.
+   */
+  --status-perfect: var(--fern-deep);
+  --status-comfortable: var(--marigold);
+  /* Undiscovered: a solid muted fill, with text dark enough for 4.5:1 on it. */
+  --status-new: color-mix(in srgb, var(--muted) 20%, var(--surface));
+  --status-new-text: #5a5249;
+  --tomato-hatch: #8e2f1f; /* the stripes: darker than tomato-deep, so paper text gains contrast on them */
+  --status-needs-work: repeating-linear-gradient(
+    -45deg,
+    var(--tomato-deep) 0 4px,
+    var(--tomato-hatch) 4px 6px
+  );
+  /* Hover on the home cards: a soft yellow-green, marigold and fern mixed. */
+  --card-hover: color-mix(in srgb, color-mix(in srgb, var(--marigold) 35%, var(--fern)) 20%, var(--surface));
+  --correct: var(--fern);
+  --correct-text: #46703f; /* fern darkened for small text on paper */
+  --correct-soft: color-mix(in srgb, var(--fern) 16%, var(--surface));
+  --wrong: var(--tomato);
+  --wrong-text: #b8432e; /* tomato darkened for small text on paper */
+  --wrong-soft: color-mix(in srgb, var(--tomato) 14%, var(--surface));
+  --gold: var(--marigold);
+
+  --edge: var(--ink); /* outlines */
+  --shadow-color: var(--ink);
+  --focus: var(--riso);
+  --stroke: 2px solid var(--edge);
+  --shadow: 3px 3px 0 var(--shadow-color);
+  --shadow-sm: 2px 2px 0 var(--shadow-color);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font: 'Roboto Mono', ui-monospace, Menlo, monospace;
+  --font-display: 'Roboto Mono', ui-monospace, Menlo, monospace;
+  /* Faint paper grain. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.15 0 0 0 0 0.14 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #111111;
+    --surface-2: #1d1d1d;
+    --text: #f0f0f0;
+    --muted: #a3a3a3;
+    --slogan: #7a7a7a;
+    --gold-text: var(--marigold); /* 11:1 on black */
+    --status-new-text: var(--muted);
+    --line: rgb(255 255 255 / 0.14);
+    --hover: color-mix(in srgb, var(--surface-2) 82%, var(--text));
+    --edge: #6e6e6e;
+    /* A black shadow would vanish on black, so the offset is a dark gray. */
+    --shadow-color: #333333;
+    --focus: #8fb0e3;
+    --correct-text: #8dbb87;
+    --wrong-text: #ef8a76;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--grain), var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Icons ---------- */
+
+.icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.icon-small {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Tooltip ---------- */
+
+/* Inverted from the page (ink on paper light, light on black dark) so it always stands out. */
+.tooltip {
+  position: fixed;
+  z-index: 1000;
+  top: var(--tip-y, 0);
+  left: var(--tip-x, 0);
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.tooltip.is-visible {
+  opacity: 1;
+}
+
+/*
+ * Rich tooltips (setRichTip): a small stats card for note and key chips. Same inverted
+ * colors as the plain tooltip; status pills use the legend's fills.
+ */
+.tooltip.is-rich {
+  max-width: none;
+  padding: 10px 12px 12px;
+}
+
+.tip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 170px;
+}
+
+.tip-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* The key picker's card is as wide as its signature, not the stats card's minimum. */
+.tip-card-key {
+  min-width: 0;
+}
+
+/* A key signature in a tooltip: a paper sheet, like the staff card, in both themes. */
+.tip-sig {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+.tip-sig svg {
+  display: block;
+}
+
+.tip-card-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.tip-card-status {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.tip-card-status.is-mastered {
+  background: var(--status-perfect);
+  color: var(--paper);
+}
+
+.tip-card-status.is-learning {
+  background: var(--status-comfortable);
+  color: var(--ink);
+}
+
+.tip-card-status.is-tricky {
+  background: var(--status-needs-work);
+  color: var(--paper);
+}
+
+.tip-card-status.is-new {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.tip-card-body {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.tip-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tip-figure-value {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.tip-figure-label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tip-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+}
+
+.tip-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.tip-ring circle {
+  fill: none;
+  stroke-width: 3.6;
+}
+
+.tip-ring-track {
+  stroke: color-mix(in srgb, var(--bg) 22%, var(--text));
+}
+
+.tip-ring-arc {
+  stroke-linecap: round;
+}
+
+.tip-ring.is-mastered .tip-ring-arc {
+  stroke: var(--fern);
+}
+
+.tip-ring.is-learning .tip-ring-arc {
+  stroke: var(--marigold);
+}
+
+.tip-ring.is-tricky .tip-ring-arc {
+  stroke: var(--tomato);
+}
+
+.tip-ring-value {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Layout ---------- */
+
+/*
+ * Home only: a quiet field of drifting notes behind everything (ui/drift.ts).
+ * The notes are drawn solid; fading the whole canvas keeps overlaps even.
+ */
+.note-drift {
+  position: fixed;
+  opacity: 0.09;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.note-drift[hidden] {
+  display: none;
+}
+
+.app {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+}
+
+.brand {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: 'Pixelify Sans', var(--font);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.brand[hidden] {
+  display: none;
+}
+
+.home-wordmark {
+  margin: 0;
+  text-align: center;
+  font-family: 'Pixelify Sans', var(--font);
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+/* A snarky one-liner under the wordmark, quiet enough not to compete with it. */
+.home-slogan {
+  margin: -18px 0 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--slogan);
+}
+
+.home-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: -8px; /* sits with the wordmark more than with the modes */
+}
+
+.level {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* The streak and level chips: the page's surface with a thin marigold outline and gold text, so the
+   Daily Challenge card stays the brightest thing on home. Marigold text on black, deep gold on paper. */
+.level-badge {
+  position: relative;
+  display: grid;
+  min-width: 120px;
+  overflow: hidden;
+  border: 1.5px solid var(--marigold);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--gold-text);
+  font-weight: 700;
+}
+
+/*
+ * The level chip is also the XP bar: a marigold layer grows from the left, carrying its own copy of
+ * the label in ink and clipped to the progress, so each part of the text sits on the background it
+ * was colored for, wherever the edge falls.
+ */
+.level-label {
+  padding: 1px 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.level-fill {
+  --fill: 0;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  background: var(--marigold);
+  color: var(--ink);
+  clip-path: inset(0 calc((1 - var(--fill)) * 100%) 0 0);
+  transition: clip-path 0.4s ease;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Centered in the space left by the top bar (and keyboard), so short screens don't leave a gap below. */
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+/*
+ * Screen changes: the incoming screen fades in with a slight zoom, growing into a round or the
+ * profile and settling back down to home. Only the new screen moves; the old one is gone at once.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .screen.is-entering {
+    animation: screen-in 0.22s ease-out;
+  }
+
+  .screen.is-entering-back {
+    animation: screen-back 0.22s ease-out;
+  }
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
+@keyframes screen-back {
+  from {
+    opacity: 0;
+    scale: 1.03;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 650;
+}
+
+/* ---------- Practice ---------- */
+
+.practice {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Exit, the count and the key on the left, the progress row ending flush with the staff sheet's right edge. */
+/* The round's key button, right above the end of the step bar (not in Flash Notes). */
+.round-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.round-tools[hidden] {
+  display: none;
+}
+
+.key-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.key-pick:hover {
+  background: var(--hover);
+}
+
+.key-pick .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* The key sheet: Random on top, then a row of major keys over a row of their relative minors. */
+.key-sheet .panel-heading {
+  padding-right: 40px;
+}
+
+.key-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.key-row {
+  display: grid;
+  grid-template-columns: 56px repeat(9, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+}
+
+.key-row-name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.key-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.key-choice:hover {
+  background: var(--hover);
+}
+
+.key-choice.is-on,
+.key-choice.is-on:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.key-choice .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.key-choice-random {
+  align-self: flex-start;
+  padding: 0 14px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 560px) {
+  .key-row {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+
+  .key-row-name {
+    grid-column: 1 / -1;
+  }
+}
+
+.round-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px; /* the names hanging under the circles */
+}
+
+.round-head .round-exit {
+  flex: none;
+}
+
+.round-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* the count sits right before the first circle */
+  gap: 8px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.round-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: none;
+}
+
+.round-status .round-ticks {
+  flex: 1;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* Named for screen readers; the screen itself doesn't show the mode's name. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.session-key {
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.session-key[hidden] {
+  display: none;
+}
+
+/* Leave the round: a quiet link at the left of the round header. */
+.link-btn.round-exit {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.link-btn.round-exit:hover,
+.link-btn.round-exit:focus-visible {
+  color: var(--text);
+}
+
+.key-hint {
+  margin-left: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+/* The profile's Back link: the same quiet link as a round's Exit, at its top left. */
+.profile-back {
+  align-self: flex-start;
+}
+
+/* No keyboard to press it on. */
+@media (hover: none) and (pointer: coarse) {
+  .key-hint {
+    display: none;
+  }
+}
+
+/* The staff is a printed sheet in both themes, so it keeps light-theme text colors. */
+.staff-card {
+  --muted: #6e655b;
+  --correct-text: #46703f;
+  --wrong-text: #b8432e;
+  position: relative;
+  border-radius: var(--radius);
+  background: var(--paper);
+  padding: 8px 12px 18px;
+  color: var(--ink);
+}
+
+.staff-card.is-shake {
+  animation: shake 0.35s ease;
+}
+
+.staff {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.staff svg {
+  display: block;
+}
+
+/* Tempo Run: the track slides under a fixed clef panel and playhead. */
+.beat-strip {
+  position: relative;
+  height: var(--strip-h);
+  overflow: hidden;
+}
+
+.beat-strip[hidden] {
+  display: none;
+}
+
+.beat-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.beat-clef {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background: var(--paper);
+}
+
+.beat-track svg,
+.beat-clef svg {
+  display: block;
+}
+
+/* Where a wrong note sits on the staff, faint beside the note to play, fading out. */
+.beat-track .beat-ghost,
+.staff-ghost {
+  opacity: 0;
+  animation: ghost-fade 1.4s ease-in forwards;
+}
+
+@keyframes ghost-fade {
+  from {
+    opacity: 0.3;
+  }
+}
+
+.beat-playhead {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  bottom: 6px;
+  left: var(--playhead-x);
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--riso);
+  opacity: 0.7;
+}
+
+.meter {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.meter-fill {
+  --level: 0;
+  height: 100%;
+  width: calc(var(--level) * 100%);
+  background: var(--fern);
+  transition: width 0.06s linear;
+}
+
+.meter-gate {
+  --level: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--level) * 100%);
+  width: 2px;
+  background: var(--text);
+}
+
+/* ---------- Piano input ---------- */
+
+.topbar-end {
+  display: flex;
+  margin-left: auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.piano-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 12px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.piano-trigger:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.piano-trigger.is-on {
+  background: var(--correct-soft);
+}
+
+.piano-trigger-icon .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.piano-source:empty {
+  display: none;
+}
+
+.piano-trigger:hover {
+  background: var(--hover);
+}
+
+.piano-trigger[hidden],
+.topbar-end[hidden] {
+  display: none;
+}
+
+.mini-meter {
+  display: none;
+  width: 36px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.piano-trigger.is-listening .mini-meter {
+  display: block;
+}
+
+.mini-meter-fill {
+  --level: 0;
+  display: block;
+  height: 100%;
+  width: calc(var(--level) * 100%);
+  background: var(--fern);
+  transition: width 0.06s linear;
+}
+
+.mini-meter-fill.is-gated {
+  background: var(--line);
+}
+
+.caret {
+  width: 6px;
+  height: 6px;
+  margin: -3px 1px 0 0;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.panel-view[hidden],
+.panel-details[hidden],
+.profile-list[hidden] {
+  display: none;
+}
+
+.panel-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: view-in 0.16s ease;
+}
+
+.panel-view.is-back {
+  animation-name: view-back;
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes view-back {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.panel-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.panel-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.choice-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.choice-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 16px 16px;
+  border-radius: var(--radius-sm);
+  border: 0;
+  background: var(--surface-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+.choice-btn:hover {
+  background: var(--accent-soft);
+}
+
+.choice-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.choice-btn.is-on {
+  background: var(--correct-soft);
+}
+
+.mode-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.choice-icon .icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* The picked choice shows a check in its top right corner. */
+.choice-check {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: var(--correct-text);
+  visibility: hidden;
+}
+
+.choice-check .icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+.choice-btn.is-on .choice-check {
+  visibility: visible;
+}
+
+.view-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Back to the instrument choices: a muted link with a chevron, above the page's heading. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 0 -8px;
+  padding: 4px 10px 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.back-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: var(--hover);
+}
+
+.chevron-left {
+  width: 8px;
+  height: 8px;
+  margin-left: 3px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-sub {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-sub.is-on {
+  color: var(--correct-text);
+}
+
+.panel-sub:empty {
+  display: none;
+}
+
+.panel-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--wrong-soft);
+}
+
+.panel-notice[hidden] {
+  display: none;
+}
+
+.panel-notice-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.panel-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-actions .btn[hidden] {
+  display: none;
+}
+
+.field[hidden] {
+  display: none;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.field-input {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--muted);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.field-input:focus-visible {
+  outline-offset: 1px;
+}
+
+/* ---------- Home ---------- */
+
+.day-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px 2px 8px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.day-streak.is-on {
+  padding: 1px 9px 1px 7px;
+  border: 1.5px solid var(--marigold);
+  background: var(--surface);
+  color: var(--gold-text);
+}
+
+.home-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.mode-card {
+  position: relative; /* holds a tag in its corner */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 0;
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+  /*
+   * Its own steady compositing layer. Without it, the icon's hover animation
+   * starting or stopping makes the browser re-layer the card mid-fade, and its
+   * background can flicker when the pointer moves between cards.
+   */
+  will-change: transform;
+}
+
+.mode-card:hover {
+  background: var(--card-hover);
+}
+
+.mode-card:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/*
+ * A small outlined tag in a card's top right corner, level with the icon tile ("Start here"
+ * on Zen, for new players). An outline in the text color, so it stays quiet next to the
+ * marigold daily card and pills, in the wordmark's pixel face.
+ */
+.mode-card-tag {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  padding: 3px 9px 2px;
+  border: 1.5px solid var(--text);
+  border-radius: 999px;
+  color: var(--text);
+  font-family: 'Pixelify Sans', var(--font); /* the wordmark's face, loaded with these capitals */
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
+ * The daily challenge card above the modes: one raised marigold button with ink text in
+ * both themes. A tear-off calendar page shows today, then the title and the time to the
+ * next challenge, then an ink Play pill. It lifts on hover and presses down when clicked.
+ */
+.daily {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  width: 100%;
+  padding: 18px 20px 18px 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--marigold);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  box-shadow: 0 5px 0 var(--marigold-deep);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * A faint strip of piano keys behind the card, tilted so it climbs toward Play. Drawn in
+ * the card's deeper marigold so it reads as a print texture, never as content.
+ */
+.daily-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.daily-keys {
+  position: absolute;
+  top: 50%;
+  right: -50px;
+  width: 360px;
+  transform: translateY(-75%) rotate(-32deg);
+  transform-origin: right center;
+  opacity: 0.6;
+}
+
+.daily-keys-white rect {
+  fill: none;
+  stroke: var(--marigold-deep);
+  stroke-width: 2;
+}
+
+.daily-keys-black rect {
+  fill: var(--marigold-deep);
+}
+
+/* Paper sparkles that twinkle in the card's open space while it's hovered. */
+.daily-sparkle {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  opacity: 0;
+  transform: scale(0);
+}
+
+.daily-sparkle svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--paper);
+}
+
+.daily-sparkle-1 { --x: 50%; --y: 22%; --s: 14px; --d: 0s; }
+.daily-sparkle-2 { --x: 58%; --y: 62%; --s: 10px; --d: 0.35s; }
+.daily-sparkle-3 { --x: 66%; --y: 28%; --s: 18px; --d: 0.7s; }
+.daily-sparkle-4 { --x: 73%; --y: 70%; --s: 12px; --d: 0.15s; }
+.daily-sparkle-5 { --x: 80%; --y: 14%; --s: 10px; --d: 0.55s; }
+.daily-sparkle-6 { --x: 96%; --y: 76%; --s: 14px; --d: 0.9s; }
+.daily-sparkle-7 { --x: 28%; --y: 12%; --s: 9px; --d: 0.45s; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .daily:hover .daily-sparkle,
+  .daily:focus-visible .daily-sparkle {
+    animation: daily-twinkle 1.2s ease-in-out var(--d) infinite;
+  }
+}
+
+@keyframes daily-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(90deg);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .daily:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 var(--marigold-deep);
+  }
+}
+
+.daily:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--marigold-deep);
+}
+
+/* A paper calendar page in both themes: an ink month band, the day large, the weekday under it. */
+.date-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 76px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ink) 25%, transparent);
+  text-align: center;
+}
+
+/* The two binding holes at the top of the page. */
+.date-page::before,
+.date-page::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paper) 30%, var(--ink));
+}
+
+.date-page::before {
+  left: 16px;
+}
+
+.date-page::after {
+  right: 16px;
+}
+
+.date-page-month {
+  padding: 5px 0 4px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The day in the wordmark's pixel face, which is loaded with the digits for this. */
+.date-page-day {
+  padding: 6px 0 2px;
+  font-family: 'Pixelify Sans', var(--font-display);
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.date-page-weekday {
+  padding-bottom: 7px;
+  color: #6e655b; /* muted ink on paper, 4.5:1 */
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.daily-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.daily-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.daily-meta {
+  font-size: 13px;
+}
+
+.daily-meta strong {
+  font-weight: 700;
+}
+
+/* A flat ink pill with paper text and a play triangle. */
+.daily-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px 12px 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.daily-go .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Phones: the page and title on top, then a full-width Play. */
+@media (max-width: 560px) {
+  .daily {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px 18px;
+  }
+
+  .daily-go {
+    grid-column: 1 / -1;
+  }
+
+  /* Phones: Play spans the card, so the keys rise along the bottom edge behind it. */
+  .daily-keys {
+    top: auto;
+    bottom: 10px;
+    right: -10px;
+    width: 300px;
+    transform: rotate(-30deg);
+  }
+}
+
+
+/* A small tile holding the mode's icon. */
+.mode-card-icon {
+  contain: paint; /* the icon's animation repaints only inside its tile */
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.mode-card-icon .icon {
+  width: 30px;
+  height: 30px;
+  overflow: visible; /* a shuffled card may slide past the icon's edge */
+}
+
+/*
+ * Each mode's icon acts out its mode while the card is hovered or focused: the
+ * flashcard flicks, Zen's notes glide in, the metronome swings, octave notes hop
+ * in turn, a chord pops together, an arpeggio lights up note by note. Only with
+ * a mouse (touch screens keep hover stuck) and never under reduced motion.
+ */
+.mode-card-icon .icon g {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Flash Notes' cards: filled with the tile's color so the front card hides the one behind. */
+.mode-card-icon .card-face {
+  fill: var(--surface-2);
+}
+
+.mode-card-icon .a-card {
+  transform-box: view-box;
+  transform-origin: 9.5px 14.5px;
+}
+
+.mode-card-icon .a-card-b {
+  transform: translate(4px, -4px);
+}
+
+/* At rest, A shows in front and B behind; the other copies wait hidden. */
+.mode-card-icon .a-card-a.a-layer-back,
+.mode-card-icon .a-card-b.a-layer-front {
+  opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* A is in front at the start and end of the loop, B in the middle. */
+  .mode-card:is(:hover, :focus-visible) .a-card-a.a-layer-front {
+    animation: icon-card-a 1.4s ease-in-out infinite, icon-layer-ends 1.4s linear infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-card-a.a-layer-back {
+    animation: icon-card-a 1.4s ease-in-out infinite, icon-layer-middle 1.4s linear infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-card-b.a-layer-front {
+    animation: icon-card-b 1.4s ease-in-out infinite, icon-layer-middle 1.4s linear infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-card-b.a-layer-back {
+    animation: icon-card-b 1.4s ease-in-out infinite, icon-layer-ends 1.4s linear infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-stream {
+    animation: icon-stream 1s linear infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-swing {
+    transform-box: view-box;
+    transform-origin: 12px 17px;
+    animation: icon-swing 0.45s ease-in-out infinite alternate;
+  }
+
+  /* I, IV, V, I: each chord note slides a step (2.75px) where the voicing moves it. */
+  .mode-card:is(:hover, :focus-visible) .a-chord-1 {
+    animation: icon-chord-low 2.4s ease-in-out infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-chord-2 {
+    animation: icon-chord-mid 2.4s ease-in-out infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-chord-3 {
+    animation: icon-chord-top 2.4s ease-in-out infinite;
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-chord-stem {
+    transform-box: fill-box;
+    transform-origin: top;
+    animation: icon-chord-stem 2.4s ease-in-out infinite;
+  }
+
+  /* Octave notes dim together, stem and all. */
+  .mode-card:is(:hover, :focus-visible) .a-dim {
+    animation: icon-dim 1.2s ease-in-out infinite;
+  }
+
+  /* Arpeggio heads ripple up in turn; each stem shortens from the beam by the same 3px (--s). */
+  .mode-card:is(:hover, :focus-visible) .a-wave-head {
+    animation: icon-wave-head 1.2s ease-in-out infinite;
+    animation-delay: var(--wave-delay);
+  }
+
+  .mode-card:is(:hover, :focus-visible) .a-wave-stem {
+    transform-box: fill-box;
+    transform-origin: top;
+    animation: icon-wave-stem 1.2s ease-in-out infinite;
+    animation-delay: var(--wave-delay);
+  }
+
+  /* Stem lengths are 11, 10.67, 10.33 and 8.5, so 1 - 3 / length keeps each on the beam. */
+  .a-wave.a-1 { --wave-delay: 0s; --s: 0.727; }
+  .a-wave.a-2 { --wave-delay: 0.12s; --s: 0.719; }
+  .a-wave.a-3 { --wave-delay: 0.24s; --s: 0.71; }
+  .a-wave.a-4 { --wave-delay: 0.36s; --s: 0.647; }
+}
+
+/*
+ * Flash Notes shuffle. Card A starts in front, card B behind it (4 up and right).
+ * A slides out to the left, tucks in behind as B comes forward, then B does the same.
+ * The layer animations swap which copy of each card shows, so a card passes behind the other.
+ */
+@keyframes icon-card-a {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px) rotate(-12deg); }
+  40%, 70% { transform: translate(4px, -4px); }
+  90% { transform: translate(0, 0); }
+}
+
+@keyframes icon-card-b {
+  0%, 20%, 90%, 100% { transform: translate(4px, -4px); }
+  40%, 50% { transform: translate(0, 0); }
+  70% { transform: translate(-6px, 3px) rotate(-12deg); }
+}
+
+/* Which copy of a card shows: one for the start and end of the loop, the other for the middle. */
+@keyframes icon-layer-ends {
+  0%, 19.9% { opacity: 1; }
+  20%, 69.9% { opacity: 0; }
+  70%, 100% { opacity: 1; }
+}
+
+@keyframes icon-layer-middle {
+  0%, 19.9% { opacity: 0; }
+  20%, 69.9% { opacity: 1; }
+  70%, 100% { opacity: 0; }
+}
+
+/* Two notes' spacing, so the repeating notes line up again at the end of each loop. */
+@keyframes icon-stream {
+  from { transform: translateX(0); }
+  to { transform: translateX(-15px); }
+}
+
+/* At rest the pendulum leans right; it starts there and swings to the same lean on the left. */
+@keyframes icon-swing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-52deg); }
+}
+
+@keyframes icon-wave-head {
+  0%, 50%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-3px); }
+}
+
+@keyframes icon-wave-stem {
+  0%, 50%, 100% { transform: scaleY(1); }
+  25% { transform: scaleY(var(--s)); }
+}
+
+/* Chords: I (C-E-G) to IV (C-F-A) to V (B-D-G) and back, holding each. */
+@keyframes icon-chord-low {
+  0%, 50%, 84%, 100% { transform: translateY(0); }
+  56%, 78% { transform: translateY(2.75px); }
+}
+
+@keyframes icon-chord-mid {
+  0%, 22%, 84%, 100% { transform: translateY(0); }
+  28%, 50% { transform: translateY(-2.75px); }
+  56%, 78% { transform: translateY(2.75px); }
+}
+
+@keyframes icon-chord-top {
+  0%, 22%, 56%, 78% { transform: translateY(0); }
+  28%, 50% { transform: translateY(-2.75px); }
+  84%, 100% { transform: translateY(0); }
+}
+
+/* The stem is 17 long and reaches 2.75 further down to the V chord's B. */
+@keyframes icon-chord-stem {
+  0%, 50%, 84%, 100% { transform: scaleY(1); }
+  56%, 78% { transform: scaleY(1.162); }
+}
+
+@keyframes icon-dim {
+  0%, 40%, 100% { opacity: 1; }
+  15% { opacity: 0.3; }
+}
+
+.mode-card-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 650;
+}
+
+/* The title row: the name, then the difficulty dots at the far end. */
+.mode-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* The difficulty hint: the bars, with the word under them. */
+.mode-card-level {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* the bars line up at the right edge, whatever the word */
+  gap: 4px;
+  flex: none;
+}
+
+.mode-card-level-word {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/*
+ * A gentle difficulty hint: three small rising bars, one to three filled in the text color.
+ * Bars, not dots: three filled dots in a row read as a "more options" menu.
+ */
+.mode-card-dots {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex: none;
+  height: 14px;
+}
+
+.mode-card-dot {
+  width: 5px;
+  height: 6px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.mode-card-dot:nth-child(2) {
+  height: 10px;
+}
+
+.mode-card-dot:nth-child(3) {
+  height: 14px;
+}
+
+.mode-card-dot.is-filled {
+  background: var(--text);
+}
+
+
+
+/* The whole card opens the full map. The heading is the button, for keyboards and screen readers. */
+.skill-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  /* See-through here, so Undiscovered chips take on the card's hover tint instead of turning a muddy gray on it. */
+  --status-new: color-mix(in srgb, var(--muted) 20%, transparent);
+}
+
+.skill-strip:hover {
+  background: var(--card-hover);
+}
+
+.skill-strip:has(.skill-strip-open:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.skill-strip-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.skill-strip-open:focus-visible {
+  outline: none;
+}
+
+.strip-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.strip-row + .strip-row {
+  margin-top: 6px;
+}
+
+/* ---------- Note chips (skill strip and map) ---------- */
+
+/* Perfect: deep fern. Comfortable: marigold. Needs work: red hatch. Undiscovered: solid muted fill. */
+.note-chip {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 26px;
+  white-space: nowrap;
+}
+
+.note-chip-octave {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.note-chip.is-mastered {
+  background: var(--status-perfect);
+  color: var(--paper);
+}
+
+.note-chip.is-learning {
+  background: var(--status-comfortable);
+  color: var(--ink);
+}
+
+.note-chip.is-new {
+  background: var(--status-new);
+  color: var(--status-new-text);
+}
+
+.note-chip.is-tricky {
+  background: var(--status-needs-work);
+  color: var(--paper);
+}
+
+.strip-chips {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 5px;
+}
+
+.strip-label {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--focus);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.back-link {
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+/* ---------- Session ---------- */
+
+.round-ticks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 2px; /* the row gap holds the names under a wrapped line */
+}
+
+.round-ticks[hidden] {
+  display: none;
+}
+
+/*
+ * A step counter: one segment per note, joined in a bar that's rounded only at
+ * its two ends. Each segment has its note's name hanging under it once done.
+ */
+.tick {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.tick-dot {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  height: 16px;
+  border-radius: 2px;
+  color: var(--paper);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.tick:first-child .tick-dot {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.tick:last-child .tick-dot {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.tick-dot .icon {
+  width: 11px;
+  height: 11px;
+  stroke-width: 3;
+}
+
+/* Still to come: a soft tint of the text color, so it shows on the page in both themes. */
+.tick.is-todo .tick-dot {
+  background: color-mix(in srgb, var(--text) 13%, transparent);
+}
+
+.tick.is-current .tick-dot {
+  border: 2px solid var(--riso);
+  background: var(--accent-soft);
+}
+
+.tick.is-clean .tick-dot {
+  background: var(--fern-deep);
+}
+
+.tick.is-rough .tick-dot {
+  background: var(--tomato-deep);
+}
+
+/* Right first time but early or late: ink on marigold, in both themes. */
+.tick.is-offbeat .tick-dot {
+  background: var(--marigold);
+  color: var(--ink);
+}
+
+.tick.is-clean .tick-dot .icon,
+.tick.is-rough .tick-dot .icon,
+.tick.is-offbeat .tick-dot .icon {
+  animation: tick-in 0.22s ease-out;
+}
+
+@keyframes tick-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick.is-clean .tick-dot .icon,
+  .tick.is-rough .tick-dot .icon,
+  .tick.is-offbeat .tick-dot .icon {
+    animation: none;
+  }
+}
+
+/* Out of the flow, so names appearing don't move anything. */
+.tick-label {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 13px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+/* The summary's row: fixed-width steps, since a short round shouldn't stretch across the card. */
+.round-ticks.is-large {
+  gap: 26px 2px;
+  padding-bottom: 18px; /* the names of the last line */
+}
+
+.round-ticks.is-large .tick {
+  flex: 0 0 34px;
+}
+
+.round-ticks.is-large .tick-dot {
+  height: 22px;
+}
+
+.round-ticks.is-large .tick-dot .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.round-ticks.is-large .tick-label {
+  font-size: 12px;
+}
+
+.session-meta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.practice[hidden],
+.summary[hidden] {
+  display: none;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 650;
+}
+
+.summary-text {
+  margin: 0;
+  color: var(--muted);
+}
+
+.summary-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ---------- Sheets ---------- */
+
+.sheet {
+  width: min(560px, calc(100vw - 32px));
+  padding: 24px;
+  border-radius: var(--radius);
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  overflow: hidden;
+}
+
+.sheet[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+/* Closes the piano sheet from its top right corner; headings leave room for it. */
+.sheet-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+}
+
+.sheet-close .icon {
+  width: 18px;
+  height: 18px;
+}
+
+#piano-sheet .panel-intro,
+#piano-sheet .view-head {
+  padding-right: 40px;
+}
+
+#stack-dialog .dialog-title {
+  padding-right: 40px; /* clear of the close button */
+}
+
+#piano-sheet .panel-heading {
+  font-size: 22px;
+}
+
+#piano-sheet .panel-intro .panel-hint {
+  font-size: 14px;
+}
+
+#piano-sheet .choice-btn .mode-title {
+  font-size: 18px;
+}
+
+/*
+ * The piano sheet is the footer's green in both themes, so it sets its own text tokens:
+ * paper text, darker patches of green for tiles, and paper fills (with light-theme
+ * tokens) for whatever is picked.
+ */
+#piano-sheet {
+  --bg: var(--footer-green);
+  --surface: var(--footer-green);
+  --surface-2: rgb(0 0 0 / 22%);
+  --hover: rgb(0 0 0 / 34%);
+  --accent-soft: rgb(0 0 0 / 34%);
+  --text: var(--paper);
+  --muted: var(--paper);
+  --line: rgb(243 236 221 / 0.22);
+  --focus: var(--paper);
+  --correct-text: var(--paper);
+  --wrong-soft: rgb(0 0 0 / 28%); /* problems: a dark patch, like the footer chip */
+  background: var(--footer-green);
+  color: var(--paper);
+}
+
+#piano-sheet .choice-btn.is-on,
+#piano-sheet .profile-row.is-active {
+  --text: var(--ink);
+  --muted: #6e655b;
+  --focus: var(--riso);
+  --correct-text: var(--fern-deep);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+#piano-sheet .choice-btn.is-on:hover {
+  background: #e4d9c3;
+}
+
+#piano-sheet .btn-ghost {
+  background: var(--paper);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+#piano-sheet .btn-ghost:hover:not(:disabled) {
+  background: #e4d9c3;
+}
+
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.profile-row.is-active {
+  background: var(--accent-soft);
+}
+
+/*
+ * The piano in use is also the mic meter; its name and buttons sit above the fill.
+ * The fill clips itself, so the row's menu can show past its edge.
+ */
+.profile-row.btn-metered {
+  overflow: visible;
+}
+
+.profile-row .btn-meter {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.profile-row.btn-metered > :not(.btn-meter) {
+  position: relative;
+}
+
+.profile-row.btn-metered > .row-menu {
+  z-index: 2;
+}
+
+/* Over the green fill, muted text darkens to keep 4.5:1. */
+#piano-sheet .profile-row.is-metering {
+  --muted: #4f4842;
+}
+
+.row-menu {
+  position: relative;
+  flex: none;
+}
+
+.row-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.row-menu-btn:hover,
+.row-menu-btn[aria-expanded='true'] {
+  background: var(--hover);
+}
+
+#piano-sheet .profile-row.is-active .row-menu-btn:hover,
+#piano-sheet .profile-row.is-active .row-menu-btn[aria-expanded='true'] {
+  background: rgb(43 39 36 / 12%);
+}
+
+/*
+ * A small ink menu, like the footer's mic callout, so it stands out on both the paper
+ * card of the piano in use and the green ones. It opens beside the three dots, not
+ * under them, so the sheet's clipped edge never cuts it off on the last row.
+ */
+.row-menu-list {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 4px);
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.row-menu-list[hidden],
+.profile-row .btn[hidden] {
+  display: none;
+}
+
+.row-menu-item {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--paper);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-menu-item:hover,
+.row-menu-item:focus-visible {
+  background: #4a443f;
+  outline: none;
+}
+
+.profile-pick {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--stroke);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.1s;
+}
+
+/* Labels stacked in one cell: the button is as wide as its longest, whichever shows. */
+.btn-labels {
+  display: grid;
+}
+
+.btn-labels > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.btn-labels > .is-shown {
+  visibility: visible;
+}
+
+/* Connecting: a quiet pressed-in look instead of a fade, so the label stays readable. */
+.piano-footer .btn-ghost:disabled,
+#piano-sheet .btn-ghost:disabled {
+  opacity: 1;
+  background: #e4d9c3;
+  box-shadow: none;
+  transform: translate(2px, 2px);
+  cursor: progress;
+}
+
+/* A button with an icon before its label, like Disconnect audio. */
+.btn .icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--riso);
+  color: var(--paper);
+}
+
+/* Green like the footer and piano sheet it leads to (Switch input). Paper text on it is 4.5:1. */
+.btn-green {
+  background: var(--footer-green);
+  color: var(--paper);
+}
+
+.btn-green:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--footer-green) 88%, var(--ink));
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--riso) 88%, var(--ink));
+}
+
+.btn-ghost {
+  background: var(--surface);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ---------- Skill map ---------- */
+
+.skillmap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-swatch.is-mastered {
+  background: var(--status-perfect);
+}
+
+.legend-swatch.is-learning {
+  background: var(--status-comfortable);
+}
+
+.legend-swatch.is-new {
+  background: var(--status-new);
+}
+
+.legend-swatch.is-tricky {
+  background: var(--status-needs-work);
+}
+
+/* ---------- Full skill map ---------- */
+
+.skill-map {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Every note on both clefs, split by status: a thin segmented bar, 2px surface gaps. */
+.dist-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dist-seg {
+  flex: var(--share) 0 0;
+  min-width: 4px;
+}
+
+.dist-seg.is-mastered {
+  background: var(--status-perfect);
+}
+
+.dist-seg.is-learning {
+  background: var(--status-comfortable);
+}
+
+.dist-seg.is-tricky {
+  background: var(--status-needs-work);
+}
+
+.dist-seg.is-new {
+  background: var(--status-new);
+}
+
+.dist-seg.is-new:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.dist-seg.is-new:first-child {
+  border-radius: 999px;
+}
+
+.dist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dist-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dist-count {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.map-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.map-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.map-figure-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1.1;
+}
+
+.map-figure-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.map-section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.map-section-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The title on the left; the count and the range picker on the right. */
+.map-section-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.map-section-end .map-section-meta {
+  white-space: nowrap;
+}
+
+/* Too narrow for the title, the count and the picker in one row: the picker wraps under. */
+@media (max-width: 560px) {
+  .map-section-head:has(.map-section-end) {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* The range picker: a native select dressed as a small outlined pill, with its own caret. */
+.cal-range {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cal-range-select {
+  appearance: none;
+  padding: 5px 30px 5px 12px;
+  border: var(--stroke);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cal-range-select:hover {
+    background: var(--hover);
+  }
+}
+
+.cal-range-select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cal-range .icon {
+  position: absolute;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+
+/* This month: weekdays across, weeks down, the day number in each square. */
+.cal-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 44px));
+  gap: 4px;
+}
+
+.cal-weekday {
+  padding-bottom: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+
+.cal-date {
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-date.is-level-3,
+.cal-date.is-level-4 {
+  color: var(--ink);
+}
+
+/* Days still to come this month: just the number, no square. */
+.cal-date.is-ahead {
+  background: transparent;
+  color: var(--muted);
+}
+
+.cal-date.is-today {
+  box-shadow: inset 0 0 0 2px var(--text);
+}
+
+/* Practice calendar: weeks as columns, Monday at the top, marigold deepening with notes played. */
+.cal-scroll {
+  position: relative; /* so a cell's offsetLeft is measured from here */
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.cal-grid,
+.cal-months {
+  display: grid;
+  grid-template-columns: 30px repeat(var(--weeks, 53), minmax(10px, 1fr));
+  column-gap: 3px;
+  min-width: 0;
+}
+
+.cal-grid {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, auto);
+  row-gap: 3px;
+}
+
+.cal-day {
+  position: sticky;
+  left: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  align-self: center;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--surface-2);
+}
+
+.cal-cell.is-future {
+  visibility: hidden;
+}
+
+.cal-cell.is-level-1 {
+  background: color-mix(in srgb, var(--marigold) 30%, var(--surface-2));
+}
+
+.cal-cell.is-level-2 {
+  background: color-mix(in srgb, var(--marigold) 55%, var(--surface-2));
+}
+
+.cal-cell.is-level-3 {
+  background: color-mix(in srgb, var(--marigold) 80%, var(--surface-2));
+}
+
+.cal-cell.is-level-4 {
+  background: var(--marigold);
+}
+
+.cal-months {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.cal-legend .cal-cell {
+  width: 11px;
+}
+
+.cal-legend .cal-cell:first-of-type {
+  margin-left: 4px;
+}
+
+.cal-legend .cal-cell:last-of-type {
+  margin-right: 4px;
+}
+
+@media (max-width: 560px) {
+  .map-figure {
+    padding: 10px;
+  }
+
+  .map-figure-value {
+    font-size: 22px;
+  }
+}
+
+/* ---------- Piano footer (home) ---------- */
+
+.piano-footer {
+  position: sticky;
+  z-index: 5;
+  bottom: 0;
+  background: var(--footer-green);
+  color: var(--paper);
+}
+
+.piano-footer[hidden] {
+  display: none;
+}
+
+.piano-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+/*
+ * Every input in the piano sheet's order, slightly stacked: the current one on a paper tile on top,
+ * the others as smaller muted tiles tucked under their neighbours, each with a cut-out ring in the
+ * footer's green so overlapping edges stay apart.
+ */
+.piano-footer-icons {
+  flex: none;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.piano-footer-icons > * + * {
+  margin-left: -6px;
+}
+
+.piano-footer-icon {
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 0 3px var(--footer-green);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.piano-footer-other {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--footer-green);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 30%, var(--footer-green));
+  color: color-mix(in srgb, var(--paper) 60%, var(--footer-green));
+}
+
+.piano-footer-other .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Phones have no room to spare in the footer: only the current input shows, and notes that aren't problems hide. */
+@media (max-width: 560px) {
+  .piano-footer-other,
+  .piano-footer-side:has(.piano-footer-status.is-hint) {
+    display: none;
+  }
+}
+
+.piano-footer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.piano-footer-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* The piano's name is the button that opens the piano sheet; the caret says it can change. */
+.piano-footer-pick {
+  position: relative; /* holds the visually hidden ", change" */
+  display: inline-flex;
+  align-self: flex-start;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: calc(100% + 8px);
+  margin: 0 0 0 -8px;
+  padding: 2px 6px 2px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Darker on hover, so paper text gains contrast rather than losing it. */
+.piano-footer-pick:hover {
+  background: color-mix(in srgb, var(--ink) 22%, var(--footer-green));
+}
+
+/* With no input picked, the name becomes a paper button asking for one. */
+.piano-footer.is-empty .piano-footer-pick {
+  margin-left: 0;
+  padding: 6px 10px 6px 14px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.piano-footer.is-empty .piano-footer-pick:hover {
+  background: #e4d9c3;
+}
+
+.piano-footer-label[hidden] {
+  display: none;
+}
+
+.piano-footer-pick:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+.piano-footer-caret .icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
+.piano-footer-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right side: what the input is doing. Empty for the on-screen keys. */
+.piano-footer-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  max-width: 45%;
+  text-align: right;
+}
+
+.piano-footer-side:not(:has(.piano-footer-status:not(:empty))) {
+  display: none;
+}
+
+.piano-footer-status {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A problem: a darker patch of the footer's green, so paper text gains contrast on it. */
+.piano-footer-status.is-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 28%);
+  color: var(--paper);
+}
+
+.piano-footer-status.is-warn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.piano-footer-status:empty {
+  display: none;
+}
+
+/*
+ * The footer's Disconnect audio button is also the mic meter: a soft fern fill grows
+ * from the left with the level, behind the label.
+ * The fill stays light so ink text keeps its contrast.
+ */
+.btn-metered {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-meter {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.btn-metered.is-metering .btn-meter {
+  display: block;
+}
+
+.btn-meter-fill {
+  --level: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--level) * 100%);
+  background: color-mix(in srgb, var(--fern) 38%, var(--paper));
+  transition: width 0.06s linear;
+}
+
+.btn-content {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.piano-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.piano-footer-actions .btn[hidden] {
+  display: none;
+}
+
+/* An always-open callout over Connect audio while the mic is off: ink on fern reads in both themes. */
+.mic-toggle-wrap {
+  position: relative;
+  display: flex;
+}
+
+.mic-toggle-wrap:has(.btn[hidden]) {
+  display: none;
+}
+
+.mic-off-callout {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.mic-off-callout::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--ink);
+}
+
+.mic-off-callout[hidden] {
+  display: none;
+}
+
+.piano-footer .btn-ghost:hover:not(:disabled) {
+  background: #e4d9c3;
+}
+
+.piano-footer .btn-ghost {
+  padding: 8px 16px;
+  font-size: 14px;
+  background: var(--paper);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+/* ---------- Keyboard ---------- */
+
+.keyboard-dock[hidden] {
+  display: none;
+}
+
+/*
+ * Sticky at the bottom of a round: the controls float just above the keys, which
+ * slide down out of sight when tucked away (rows from 1fr to 0fr).
+ */
+.keyboard-dock {
+  position: sticky;
+  bottom: 0;
+}
+
+.dock-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.keys-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.keys-toggle:hover {
+  background: var(--hover);
+}
+
+.keys-toggle .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.keys-toggle .icon:last-child {
+  stroke-width: 2.5;
+}
+
+.dock-keys {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.keyboard-dock.is-collapsed .dock-keys {
+  grid-template-rows: 0fr;
+}
+
+.dock-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The tomato strip along the top is the red felt behind a piano's keys. */
+.dock-panel {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  padding: 14px 0 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-keys {
+    transition: none;
+  }
+}
+
+.piano {
+  overflow-x: auto;
+  padding: 0 24px;
+  scrollbar-width: thin;
+}
+
+.piano-keys {
+  display: flex;
+  min-width: 840px;
+  max-width: 1180px;
+  margin: 0 auto;
+  height: 132px;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.piano-slot {
+  position: relative;
+  flex: 1;
+}
+
+.piano-key {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piano-key-white {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  background: #fbf8f1;
+  border: 1px solid #b9af9c; /* soft key edges, the same in both themes */
+  border-radius: 0 0 6px 6px;
+  margin-right: -2px;
+  transition: background 0.1s;
+}
+
+
+.piano-key-black {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: -30%;
+  width: 60%;
+  height: 62%;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0 0 5px 5px;
+  transition: background 0.1s;
+}
+
+/*
+ * Hover only with a mouse or trackpad. Touch screens keep :hover on the last key
+ * tapped, which left it faintly lit after its flash.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .piano-key-white:hover {
+    background: #ece4d3; /* the keys are ivory in both themes */
+  }
+
+  .piano-key-black:hover {
+    background: #4a433d;
+  }
+}
+
+.piano-key.is-correct {
+  background: var(--fern);
+}
+
+.piano-key.is-wrong {
+  background: var(--tomato);
+}
+
+/* A block that floats up from a pressed key and fades: riso, or the result's color. */
+.key-float {
+  position: fixed;
+  z-index: 50;
+  left: var(--x);
+  top: var(--y);
+  width: var(--w);
+  height: 14px;
+  border-radius: 4px;
+  background: var(--riso);
+  pointer-events: none;
+  animation: key-float 0.65s ease-out forwards;
+}
+
+.key-float.is-correct {
+  background: var(--fern);
+}
+
+.key-float.is-wrong {
+  background: var(--tomato);
+}
+
+@keyframes key-float {
+  from {
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-110px);
+    opacity: 0;
+  }
+}
+
+.piano-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6e655b; /* fixed: the labels sit on ivory keys in both themes */
+  pointer-events: none;
+}
+
+.piano-label.is-middle {
+  color: var(--riso);
+}
+
+/* ---------- Dialog ---------- */
+
+.dialog {
+  width: min(440px, calc(100vw - 32px));
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 24px;
+}
+
+.dialog::backdrop {
+  background: rgb(43 39 36 / 0.45);
+}
+
+.dialog-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.dialog-text {
+  margin: 0 0 16px;
+  color: var(--muted);
+  min-height: 42px;
+}
+
+.progress {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  --fill: 0;
+  height: 100%;
+  width: calc(var(--fill) * 100%);
+  background: var(--riso);
+  transition: width 0.2s ease;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 760px) {
+  .mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  .screen {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-wordmark {
+    font-size: 38px;
+  }
+
+  /* Exit on its own line, the status card full width below. */
+  .round-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .round-head .round-exit {
+    align-self: flex-start;
+  }
+
+  .round-status {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .round-info {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Two even lines rather than a full line and a few strays. */
+  /* Two even rows, each rounded at its own ends (`is-row-end`, `is-row-start` from renderTicks). */
+  .round-status .round-ticks {
+    display: grid;
+    grid-template-columns: repeat(var(--half, 10), minmax(0, 1fr));
+  }
+
+  .round-status .tick.is-row-start .tick-dot {
+    border-top-left-radius: 999px;
+    border-bottom-left-radius: 999px;
+  }
+
+  .round-status .tick.is-row-end .tick-dot {
+    border-top-right-radius: 999px;
+    border-bottom-right-radius: 999px;
+  }
+
+  .topbar .day-streak {
+    display: none;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .level-badge {
+    min-width: 96px;
+  }
+
+  .topbar-end {
+    gap: 10px;
+  }
+
+  .piano {
+    padding: 0 16px;
+  }
+
+  .strip-chips {
+    gap: 3px;
+  }
+
+  .note-chip {
+    padding: 0;
+    font-size: 12px;
+  }
+
+  .strip-chips .note-chip-octave,
+  .strip-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .piano-footer-inner {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .piano-footer-name {
+    font-size: 18px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ?debug only: what the mic hears on a stack. A developer readout, not app UI. */
+.debug-panel {
+  position: fixed;
+  top: 64px;
+  left: 8px;
+  z-index: 50;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 80%);
+  color: #fff;
+  font: 11px/1.4 ui-monospace, Menlo, monospace;
+  pointer-events: none;
+}

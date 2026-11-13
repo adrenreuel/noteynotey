@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <title>ipracticesheet</title>
+
+    <!-- Font Awesome (for check-circle) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Google Font -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Stack+Sans+Notch:wght@200..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- VexFlow (ESM) -->
+    <script type="module">
+      import { Flow as VF } from "https://esm.sh/vexflow@4";
+      window.__VF = VF;
+    </script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #000;
+        --text: #e8eefc;
+        --muted: #9aa6c2;
+        --edge: #1f2430;
+        --panel: #0b0d12;
+        --accent: #6ea8fe;
+        --nav-h: 56px;
+        --footer-h: 72px;
+        --green: #07be35;
+      }
+      html,
+      body {
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        background: #ffffff;
+        color: var(--text);
+        font-family: "Stack Sans Notch", sans-serif;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      .nav {
+        position: fixed;
+        inset: 0 0 auto 0;
+        height: var(--nav-h);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        background: #000;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 20;
+      }
+      .brand a {
+        color: var(--text);
+        text-decoration: none;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        font-size: 25px;
+      }
+
+      .wrap {
+        height: 100vh;
+        width: 100vw;
+        display: grid;
+        grid-template-rows: var(--nav-h) 1fr;
+        position: relative;
+        z-index: 2; /* above visualizer */
+      }
+      .stage {
+        position: relative;
+        padding: 16px;
+        padding-bottom: calc(var(--footer-h) + 12px);
+        display: grid;
+        place-items: center;
+      }
+      .stack {
+        width: min(900px, 94vw);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .sheet-card {
+        background: #fff;
+        color: #111;
+        border-top-right-radius: 18px;
+        border-top-left-radius: 18px;
+        padding: 18px;
+        min-height: min(56vh, 350px);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          #000 0%,
+          #000 90%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          #000 0%,
+          #000 80%,
+          transparent 100%
+        );
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+      }
+
+      @supports not (mask-image: linear-gradient(#000, transparent)) {
+        .sheet-card::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 10%;
+          pointer-events: none;
+          /* use the page bg var if you have one, else it defaults to black */
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0) 0%,
+            var(--bg, #000) 100%
+          );
+        }
+      }
+
+      .sheet-header {
+        padding-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+      }
+      .title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .subtitle {
+        margin-top: -5px;
+        color: #555;
+        font-size: 14px;
+      }
+
+      .staff {
+        position: relative;
+        flex: 1;
+        border-radius: 12px;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      /* VexFlow overlay host */
+      .vf {
+        position: absolute;
+        inset: 12px;
+      }
+
+      .measure {
+        position: absolute;
+        top: 0;
+        will-change: transform;
+        pointer-events: none;
+      }
+
+      .playhead {
+        position: absolute;
+        top: 0;
+        width: 50px; /* PLAYHEAD_WIDTH */
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(175, 24, 240, 0.96) 100%
+        );
+        border-radius: 2px;
+        pointer-events: none;
+      }
+
+      .fade-left {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 33%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .dock {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: var(--footer-h);
+        padding: 10px 16px;
+        background: #000;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 15;
+      }
+      .led {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #444b5f;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+        flex: 0 0 auto;
+      }
+      .on {
+        background: #2ecc71;
+      }
+      .off {
+        background: #e74c3c;
+      }
+
+      .mini {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        flex: 0 0 auto;
+        min-width: 100px;
+      }
+      .mini .val {
+        font-weight: 800;
+        font-size: 16px;
+      }
+      .mini .unit {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .graph {
+        flex: 0 0 auto;
+        width: 200px;
+        height: 48px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #0b0d12;
+        display: block;
+      }
+
+      .mute-btn {
+        flex: 0 0 auto;
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: #0a0a0a;
+        cursor: pointer;
+        transition: transform 0.04s ease, border-color 0.2s ease,
+          background 0.2s ease;
+      }
+      .mute-btn:hover {
+        border-color: rgba(255, 255, 255, 0.28);
+      }
+      .mute-btn:active {
+        transform: translateY(1px) scale(0.99);
+      }
+      .mute-btn i {
+        font-size: 20px;
+      }
+      .mute-btn.muted i {
+        color: #888;
+      }
+      .mute-btn.unmuted i {
+        color: #fff;
+      }
+
+      .spacer {
+        flex: 1 1 auto;
+      }
+      @media (max-width: 420px) {
+        .note {
+          display: none;
+        }
+      }
+
+      /* ======= Background Visualizer ======= */
+      #viz {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1; /* behind .wrap, above body */
+        pointer-events: none;
+        display: block;
+        opacity: 0.9;
+        filter: blur(32px) saturate(1.25);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Audio-reactive background visualizer (multi-blob) -->
+    <canvas
+      id="viz"
+      aria-hidden="true"
+    ></canvas>
+
+    <nav
+      class="nav"
+      role="navigation"
+      aria-label="Top Navigation"
+    >
+      <div class="brand">
+        <a
+          href="https://ipracticesheet.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fas fa-music"></i> ipracticesheet.com
+        </a>
+      </div>
+    </nav>
+
+    <div class="wrap">
+      <div></div>
+      <div class="stage">
+        <div class="stack">
+          <section
+            class="sheet-card"
+            aria-label="Sheet Music"
+          >
+            <div class="sheet-header">
+              <h1 class="title">Hello World</h1>
+            </div>
+            <div
+              class="staff"
+              aria-hidden="false"
+            >
+              <div
+                id="vf"
+                class="vf"
+                aria-label="notation"
+              ></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <footer
+      class="dock"
+      role="contentinfo"
+    >
+      <div
+        id="led"
+        class="led off"
+        title="status"
+      ></div>
+      <div class="mini">
+        <span
+          id="freqVal"
+          class="val"
+          >—</span
+        ><span class="unit">Hz</span>
+      </div>
+      <div
+        id="note"
+        class="note"
+      ></div>
+      <div class="spacer"></div>
+      <canvas
+        id="graph"
+        class="graph"
+        aria-label="frequency graph"
+      ></canvas>
+      <button
+        id="muteToggle"
+        class="mute-btn muted"
+        aria-pressed="true"
+        aria-label="Unmute"
+      >
+        <i class="fa-solid fa-microphone"></i>
+      </button>
+    </footer>
+
+    <script>
+      /* ===========================
+         UI + Audio HUD
+      ============================ */
+      const elMute = document.getElementById("muteToggle");
+      const elLed = document.getElementById("led");
+      const elNote = document.getElementById("note");
+      const elFreqVal = document.getElementById("freqVal");
+      const elGraph = document.getElementById("graph");
+
+      let ctx, analyser, src, rafId, stream;
+      let dataArrayU8, dataArrayF32;
+      let isMuted = true;
+
+      let gctx,
+        freqBuf = [];
+      const F_MIN = 80,
+        F_MAX = 1500;
+
+      function setStatus(on) {
+        elLed.classList.toggle("on", on);
+        elLed.classList.toggle("off", !on);
+      }
+      function binToFreq(binIdx, sampleRate, fftSize) {
+        return (binIdx * sampleRate) / fftSize;
+      }
+      function freqToNoteName(f) {
+        if (!f || !isFinite(f)) return "";
+        const A4 = 440,
+          NOTE = [
+            "C",
+            "C#",
+            "D",
+            "D#",
+            "E",
+            "F",
+            "F#",
+            "G",
+            "G#",
+            "A",
+            "A#",
+            "B",
+          ];
+        const midi = Math.round(69 + 12 * Math.log2(f / A4));
+        const name = NOTE[((midi % 12) + 12) % 12];
+        const oct = Math.floor(midi / 12) - 1;
+        const cents = Math.round(
+          1200 * Math.log2(f / (A4 * Math.pow(2, (midi - 69) / 12)))
+        );
+        return `${name}${oct} (${cents}¢)`;
+      }
+
+      async function start() {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            },
+          });
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          src = ctx.createMediaStreamSource(stream);
+          analyser = ctx.createAnalyser();
+
+          analyser.fftSize = 1024;
+          analyser.smoothingTimeConstant = 0.2; // snappy for visuals
+          analyser.minDecibels = -100;
+          analyser.maxDecibels = -10;
+
+          src.connect(analyser);
+          dataArrayU8 = new Uint8Array(analyser.frequencyBinCount);
+          dataArrayF32 = new Float32Array(analyser.frequencyBinCount);
+          setStatus(true);
+          animate();
+        } catch (e) {
+          console.error(e);
+          setStatus(false);
+        }
+      }
+      function stop() {
+        cancelAnimationFrame(rafId);
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        if (ctx) ctx.close();
+        setStatus(false);
+        elFreqVal.textContent = "—";
+        elNote.textContent = "";
+        freqBuf.length = 0;
+        drawGraph();
+      }
+
+      function animate() {
+        if (analyser) {
+          analyser.getByteFrequencyData(dataArrayU8); // HUD/graph
+          analyser.getFloatFrequencyData(dataArrayF32); // visualizer (dB)
+        }
+
+        // HUD: quick peak-based indicator
+        let maxVal = 0,
+          maxIdx = -1;
+        if (analyser) {
+          for (let i = 0; i < dataArrayU8.length; i++) {
+            const v = dataArrayU8[i];
+            if (v > maxVal) {
+              maxVal = v;
+              maxIdx = i;
+            }
+          }
+        }
+        let fNow = null;
+        if (analyser && maxVal >= 8) {
+          const i = maxIdx,
+            yL = dataArrayU8[i - 1] || 0,
+            yC = dataArrayU8[i] || 0,
+            yR = dataArrayU8[i + 1] || 0;
+          const denom = yL - 2 * yC + yR || 1;
+          const shift = (0.5 * (yL - yR)) / denom;
+          const refined = Math.max(0, i + shift);
+          const f = binToFreq(refined, ctx.sampleRate, analyser.fftSize);
+          fNow = f;
+          elFreqVal.textContent = f.toFixed(1);
+          elNote.textContent = freqToNoteName(f);
+        } else {
+          elFreqVal.textContent = "—";
+          elNote.textContent = "";
+        }
+
+        pushFreq(fNow);
+        drawGraph();
+        drawVisualizer(); // multi-blob
+
+        rafId = requestAnimationFrame(animate);
+      }
+
+      function resizeGraph() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = elGraph.getBoundingClientRect();
+        const cssW = Math.max(1, rect.width | 0);
+        const cssH = Math.max(1, rect.height | 0);
+        elGraph.width = Math.max(1, (cssW * dpr) | 0);
+        elGraph.height = Math.max(1, (cssH * dpr) | 0);
+        if (!gctx) gctx = elGraph.getContext("2d");
+        gctx.setTransform(1, 0, 0, 1, 0, 0);
+        gctx.scale(dpr, dpr);
+        drawGraph();
+      }
+      function pushFreq(f) {
+        const maxLen = Math.max(50, elGraph.clientWidth | 0);
+        if (freqBuf.length >= maxLen) freqBuf.shift();
+        freqBuf.push(f && isFinite(f) ? f : NaN);
+      }
+      function yFor(freq, h) {
+        const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+        const f = clamp(freq, F_MIN, F_MAX);
+        const lmin = Math.log10(F_MIN),
+          lmax = Math.log10(F_MAX);
+        const t = (Math.log10(f) - lmin) / (lmax - lmin);
+        return h - t * h;
+      }
+      function drawGraph() {
+        if (!gctx) return;
+        const rect = elGraph.getBoundingClientRect();
+        const w = rect.width | 0,
+          h = rect.height | 0;
+        gctx.clearRect(0, 0, w, h);
+        gctx.strokeStyle = "rgba(255,255,255,0.07)";
+        gctx.lineWidth = 1;
+        gctx.beginPath();
+        for (let x = 0; x <= w; x += 40) {
+          gctx.moveTo(x + 0.5, 0);
+          gctx.lineTo(x + 0.5, h);
+        }
+        for (let y = 0; y <= h; y += 20) {
+          gctx.moveTo(0, y + 0.5);
+          gctx.lineTo(w, y + 0.5);
+        }
+        gctx.stroke();
+        const refs = [220, 440, 880];
+        gctx.strokeStyle = "rgba(110,168,254,0.35)";
+        refs.forEach((f) => {
+          const y = yFor(f, h) + 0.5;
+          gctx.beginPath();
+          gctx.moveTo(0, y);
+          gctx.lineTo(w, y);
+          gctx.stroke();
+        });
+        if (!freqBuf.length) return;
+        gctx.lineWidth = 2;
+        gctx.strokeStyle = "rgba(232,238,252,0.95)";
+        gctx.beginPath();
+        const step = w / Math.max(1, freqBuf.length - 1);
+        let started = false;
+        for (let i = 0; i < freqBuf.length; i++) {
+          const f = freqBuf[i];
+          const x = ((i * step) | 0) + 0.5;
+          if (!isNaN(f)) {
+            const y = yFor(f, h) + 0.5;
+            if (!started) {
+              gctx.moveTo(x, y);
+              started = true;
+            } else gctx.lineTo(x, y);
+          } else {
+            started = false;
+          }
+        }
+        gctx.stroke();
+      }
+
+      /* ===========================
+         Background Visualizer (multi-blob, class-driven)
+         - LOWS  (≈ 60–200 Hz)   teal/blue
+         - MIDS  (≈ 200–2000 Hz) magenta/violet
+         - HIGHS (≈ 2–6 kHz)     amber/orange
+         Replicates each class into many blobs scattered around.
+      ============================ */
+      const viz = document.getElementById("viz");
+      const vctx = viz.getContext("2d");
+      let vizW = 0,
+        vizH = 0,
+        vizDPR = 1;
+
+      // Smoothing + normalization
+      const EMA_ATTACK = 0.5;
+      const EMA_DECAY = 0.18;
+      const PEAK_DECAY = 0.01;
+      const GAIN = 1.6;
+      const GAMMA = 0.7;
+
+      // Class envelopes (shared by blobs of the same class)
+      const classEnv = {
+        low: 0.2,
+        peakLow: 0.2,
+        mid: 0.2,
+        peakMid: 0.2,
+        high: 0.2,
+        peakHigh: 0.2,
+      };
+
+      // Class definitions
+      const CLASS_DEFS = {
+        low: {
+          key: "low",
+          colorStops: ["rgba(40,220,220,0.9)", "rgba(80,160,255,0.55)"],
+          rBase: 0.42,
+          speedBase: 20,
+          speedGain: 220,
+          band: [60, 200],
+        },
+        mid: {
+          key: "mid",
+          colorStops: ["rgba(255,70,215,0.9)", "rgba(155,110,255,0.55)"],
+          rBase: 0.38,
+          speedBase: 24,
+          speedGain: 260,
+          band: [200, 2000],
+        },
+        high: {
+          key: "high",
+          colorStops: ["rgba(255,200,80,0.9)", "rgba(255,135,70,0.55)"],
+          rBase: 0.34,
+          speedBase: 26,
+          speedGain: 300,
+          band: [2000, 6000],
+        },
+      };
+
+      const BLOBS_PER_CLASS = 7; // total ≈ 21 blobs
+
+      const blobs = []; // {classKey, x,y, angle, vx,vy, scale, jitter, ...}
+
+      function rand(a, b) {
+        return a + Math.random() * (b - a);
+      }
+
+      function seedBlobs() {
+        blobs.length = 0;
+        Object.values(CLASS_DEFS).forEach((def, idx) => {
+          for (let i = 0; i < BLOBS_PER_CLASS; i++) {
+            const angle = rand(0, Math.PI * 2);
+            blobs.push({
+              classKey: def.key,
+              x: Math.random() * vizW,
+              y: Math.random() * vizH,
+              angle,
+              vx: Math.cos(angle) * def.speedBase * 0.2,
+              vy: Math.sin(angle) * def.speedBase * 0.2,
+              scale: rand(0.65, 1.2), // per-blob size variance
+              jitter: rand(0.6, 1.4), // per-blob motion variance
+              swirl: rand(0.4, 1.0), // orbit amount
+              seed: Math.random() * 1000, // for flow variations
+            });
+          }
+        });
+      }
+
+      function resizeViz() {
+        vizDPR = window.devicePixelRatio || 1;
+        const rect = viz.getBoundingClientRect();
+        vizW = Math.max(1, rect.width | 0);
+        vizH = Math.max(1, rect.height | 0);
+        viz.width = Math.max(1, (vizW * vizDPR) | 0);
+        viz.height = Math.max(1, (vizH * vizDPR) | 0);
+        vctx.setTransform(1, 0, 0, 1, 0, 0);
+        vctx.scale(vizDPR, vizDPR);
+        seedBlobs();
+      }
+
+      // Band energy from dB spectrum
+      function bandEnergy(minHz, maxHz) {
+        if (!analyser || !dataArrayF32) return 0.15;
+        const sr = ctx.sampleRate;
+        const fftSize = analyser.fftSize;
+        const len = dataArrayF32.length;
+        let sum = 0,
+          count = 0;
+        for (let i = 0; i < len; i++) {
+          const f = (i * sr) / fftSize;
+          if (f >= minHz && f < maxHz) {
+            const db = dataArrayF32[i];
+            const mag = Math.pow(10, db / 20);
+            sum += mag * mag;
+            count++;
+          }
+        }
+        if (!count) return 0;
+        let v = Math.sqrt(sum / count);
+        v = Math.pow(v * GAIN, GAMMA);
+        return Math.min(1, v);
+      }
+
+      function envUpdate(prev, target) {
+        const k = target > prev ? EMA_ATTACK : EMA_DECAY;
+        return prev + k * (target - prev);
+      }
+
+      function updateClassEnvelopes() {
+        if (!analyser || !dataArrayF32) {
+          const idle = 0.15 + 0.03 * Math.sin(performance.now() * 0.002);
+          classEnv.low = envUpdate(classEnv.low, idle);
+          classEnv.mid = envUpdate(classEnv.mid, idle);
+          classEnv.high = envUpdate(classEnv.high, idle);
+          return;
+        }
+        // raw energies
+        const eLow = bandEnergy(...CLASS_DEFS.low.band);
+        const eMid = bandEnergy(...CLASS_DEFS.mid.band);
+        const eHigh = bandEnergy(...CLASS_DEFS.high.band);
+
+        // rolling peaks (per class)
+        classEnv.peakLow =
+          eLow > classEnv.peakLow
+            ? eLow
+            : Math.max(0.05, classEnv.peakLow - PEAK_DECAY);
+        classEnv.peakMid =
+          eMid > classEnv.peakMid
+            ? eMid
+            : Math.max(0.05, classEnv.peakMid - PEAK_DECAY);
+        classEnv.peakHigh =
+          eHigh > classEnv.peakHigh
+            ? eHigh
+            : Math.max(0.05, classEnv.peakHigh - PEAK_DECAY);
+
+        // normalize to recent peak, boost a bit
+        const nLow = Math.min(
+          1,
+          Math.pow(eLow / (classEnv.peakLow + 1e-6), 0.85) * 1.25
+        );
+        const nMid = Math.min(
+          1,
+          Math.pow(eMid / (classEnv.peakMid + 1e-6), 0.85) * 1.25
+        );
+        const nHigh = Math.min(
+          1,
+          Math.pow(eHigh / (classEnv.peakHigh + 1e-6), 0.85) * 1.25
+        );
+
+        classEnv.low = envUpdate(classEnv.low, nLow);
+        classEnv.mid = envUpdate(classEnv.mid, nMid);
+        classEnv.high = envUpdate(classEnv.high, nHigh);
+      }
+
+      // Simple flow field (angle) based on sin/cos; avoids drift to one side and keeps variety
+      function flowAngle(x, y, t, seed) {
+        const nx = x / Math.max(1, vizW);
+        const ny = y / Math.max(1, vizH);
+        const a =
+          Math.sin((nx * 3.1 + t * 0.15 + seed) * 2.1) +
+          Math.cos((ny * 2.7 - t * 0.12 + seed * 0.7) * 1.9);
+        return a * Math.PI; // -π..π-ish
+      }
+
+      // Toroidal wrap to prevent edge clustering
+      function wrapToroidal(b, margin) {
+        const W = vizW + 2 * margin;
+        const H = vizH + 2 * margin;
+        if (b.x < -margin) b.x += W;
+        if (b.x > vizW + margin) b.x -= W;
+        if (b.y < -margin) b.y += H;
+        if (b.y > vizH + margin) b.y -= H;
+      }
+
+      // Physics integration for many blobs
+      let tVis = 0;
+      function stepBlobs(dt) {
+        tVis += dt;
+
+        blobs.forEach((b) => {
+          const def = CLASS_DEFS[b.classKey];
+          const env =
+            b.classKey === "low"
+              ? classEnv.low
+              : b.classKey === "mid"
+              ? classEnv.mid
+              : classEnv.high;
+
+          // desired speed (class energy → faster)
+          const speed = (def.speedBase + def.speedGain * env) * b.jitter;
+
+          // flow-influenced heading
+          const fAng = flowAngle(b.x, b.y, tVis * 0.6, b.seed);
+          // blend flow with per-blob swirl to avoid synchronized motion
+          const targetAngle =
+            b.angle * (1 - 0.35 * b.swirl) + fAng * (0.35 * b.swirl);
+
+          // turn rate increases with env, but stays smooth
+          const turnLerp = 1 - Math.exp(-dt * (4 + 6 * env));
+          // shortest-angle interpolation
+          let da = targetAngle - b.angle;
+          while (da > Math.PI) da -= Math.PI * 2;
+          while (da < -Math.PI) da += Math.PI * 2;
+          b.angle += da * turnLerp;
+
+          // update velocity toward heading
+          const tx = Math.cos(b.angle) * speed;
+          const ty = Math.sin(b.angle) * speed;
+          const velLerp = 1 - Math.exp(-dt * 8);
+          b.vx += (tx - b.vx) * velLerp;
+          b.vy += (ty - b.vy) * velLerp;
+
+          // integrate
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+
+          // toroidal wrap keeps distribution across the whole screen
+          wrapToroidal(b, Math.min(vizW, vizH) * 0.12);
+        });
+      }
+
+      function drawBlob(x, y, r, colors, alpha) {
+        const grad = vctx.createRadialGradient(x, y, 0, x, y, r);
+        grad.addColorStop(0, colors[0]);
+        grad.addColorStop(0.65, colors[1]);
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        vctx.globalAlpha = alpha;
+        vctx.fillStyle = grad;
+        vctx.beginPath();
+        vctx.arc(x, y, r, 0, Math.PI * 2);
+        vctx.fill();
+        vctx.globalAlpha = 1;
+      }
+
+      let lastFrame = 0;
+      function drawVisualizer() {
+        const now = performance.now();
+        const dt = lastFrame ? Math.min(0.05, (now - lastFrame) / 1000) : 0.016;
+        lastFrame = now;
+
+        updateClassEnvelopes();
+        stepBlobs(dt);
+
+        vctx.clearRect(0, 0, vizW, vizH);
+        const prevComp = vctx.globalCompositeOperation;
+        vctx.globalCompositeOperation = "lighter";
+
+        const base = Math.min(vizW, vizH);
+
+        // Draw many blobs, each sized/brightened by its class envelope
+        for (const b of blobs) {
+          const def = CLASS_DEFS[b.classKey];
+          const env =
+            b.classKey === "low"
+              ? classEnv.low
+              : b.classKey === "mid"
+              ? classEnv.mid
+              : classEnv.high;
+
+          // stronger visual reaction while keeping previous overall scale feel
+          const size = base * def.rBase * b.scale * (0.3 + 1.0 * env);
+          const bright = 0.35 + 0.65 * env; // per-blob brightness
+          drawBlob(b.x, b.y, size, def.colorStops, bright);
+        }
+
+        vctx.globalCompositeOperation = prevComp;
+      }
+
+      /* ===========================
+         VexFlow / Scrolling measures
+      ============================ */
+      let VF = null,
+        vfRenderer = null,
+        vfContext = null,
+        vfStave = null;
+
+      const PLAYHEAD_WIDTH = 50;
+      const PLAYHEAD_RIGHT_OFFSET_PX = 200;
+
+      const SCROLL_SPEED_PX_S = 150;
+      const MEASURE_NOTES = 4;
+      const GAP_PX = 12;
+
+      let measures = [];
+      let innerX = 0;
+      let lastTs = 0;
+
+      let playheadLeftAbsX = 0;
+      let playheadRightAbsX = 0;
+
+      function getVFNamespace() {
+        return window.__VF || null;
+      }
+
+      function generateRandomNoteSpecs(count = MEASURE_NOTES) {
+        const baseNames = ["c", "d", "e", "f", "g", "a", "b"];
+        const octaves = [4, 5];
+        const specs = [];
+        for (let i = 0; i < count; i++) {
+          const name = baseNames[(Math.random() * baseNames.length) | 0];
+          const octave = octaves[(Math.random() * octaves.length) | 0];
+          const allowSharp = !["e", "b"].includes(name);
+          const allowFlat = !["c", "f"].includes(name);
+          let acc = null;
+          const r = Math.random();
+          if (allowSharp && allowFlat) {
+            if (r < 0.33) acc = "#";
+            else if (r < 0.66) acc = "b";
+          } else if (allowSharp && r < 0.4) acc = "#";
+          else if (allowFlat && r < 0.4) acc = "b";
+          const key = acc ? `${name}${acc}/${octave}` : `${name}/${octave}`;
+          const label =
+            name.toUpperCase() +
+            (acc === "b" ? "♭" : acc === "#" ? "#" : "") +
+            octave;
+          specs.push({ key, acc: acc || null, label });
+        }
+        return specs;
+      }
+
+      function colorNotePassed(measure, idx) {
+        const purple =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--purple")
+            .trim() || "#af18f0";
+
+        const ng = measure.noteGroups[idx];
+        if (ng) {
+          ng.setAttribute("stroke", purple);
+          ng.setAttribute("fill", purple);
+        }
+
+        const lbl = measure.labelTexts[idx];
+        if (lbl) {
+          lbl.setAttribute("fill", purple);
+          const bbox = lbl.getBBox();
+          const icon = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+          );
+          icon.textContent = "✔";
+          icon.setAttribute("x", String(bbox.x + bbox.width + 6));
+          icon.setAttribute("y", String(bbox.y + bbox.height - 2));
+          icon.setAttribute("fill", purple);
+          icon.setAttribute("font-size", "13");
+          icon.setAttribute("data-check", "1");
+          lbl.parentNode.appendChild(icon);
+        }
+      }
+
+      function createMeasure(specs, x) {
+        const host = document.getElementById("vf");
+        const measDiv = document.createElement("div");
+        measDiv.className = "measure";
+        measDiv.style.left = "0px";
+        host.appendChild(measDiv);
+
+        const innerW = Math.max(220, Math.round((vfStave.getWidth() - 40) / 2));
+        const h = host.clientHeight || 160;
+
+        const VFNS = VF;
+        const measRenderer = new VFNS.Renderer(
+          measDiv,
+          VFNS.Renderer.Backends.SVG
+        );
+        measRenderer.resize(innerW, h);
+        const ctxMeas = measRenderer.getContext();
+        ctxMeas.setFont("Arial", 10);
+
+        const frag = new VFNS.Stave(0, vfStave.getY(), innerW);
+        frag.setNumLines(0);
+
+        const Justify = (VFNS.Annotation && VFNS.Annotation.Justify) || {
+          LEFT: 1,
+          CENTER: 2,
+          RIGHT: 3,
+          CENTER_STEM: 4,
+        };
+        const VJust = (VFNS.Annotation && VFNS.Annotation.VerticalJustify) || {
+          TOP: 1,
+          CENTER: 2,
+          BOTTOM: 3,
+          CENTER_STEM: 4,
+        };
+
+        const notes = specs.map((s) => {
+          const n = new VFNS.StaveNote({
+            keys: [s.key],
+            duration: "q",
+            clef: "treble",
+          });
+          if (s.acc) n.addModifier(new VFNS.Accidental(s.acc), 0);
+          const ann = new VFNS.Annotation(s.label)
+            .setJustification(Justify.CENTER)
+            .setVerticalJustification(VJust.TOP)
+            .setFont("Arial", 12, "");
+          ann.setTextLine(1);
+          n.addModifier(ann, 0);
+          return n;
+        });
+
+        const voice = new VFNS.Voice({
+          num_beats: notes.length,
+          beat_value: 4,
+        });
+        voice.addTickables(notes);
+        new VFNS.Formatter().joinVoices([voice]).format([voice], innerW - 20);
+        voice.draw(ctxMeas, frag);
+
+        const svgMeas = measDiv.querySelector("svg");
+        measDiv.style.width = `${innerW}px`;
+        measDiv.style.height = `${h}px`;
+        measDiv.style.transform = `translateX(${x + innerX}px)`;
+
+        const noteGroups = Array.from(
+          svgMeas.querySelectorAll(".vf-stavenote")
+        );
+        const labelTexts = Array.from(
+          svgMeas.querySelectorAll(".vf-annotation")
+        );
+        const noteXs = notes.map((n) => n.getAbsoluteX());
+
+        noteGroups.forEach((g) => {
+          g.setAttribute("stroke", "#111");
+          g.setAttribute("fill", "#111");
+        });
+        labelTexts.forEach((t) => t.setAttribute("fill", "#111"));
+
+        return {
+          div: measDiv,
+          svg: svgMeas,
+          notes,
+          startX: x,
+          width: innerW,
+          noteGroups,
+          labelTexts,
+          noteXs,
+          passedIndex: -1,
+        };
+      }
+
+      function ensureUpcoming() {
+        const svgW = vfStave.getWidth();
+        const needRightmostX = -innerX + svgW * 1.2;
+        let rightEdge = measures.length
+          ? measures[measures.length - 1].startX +
+            measures[measures.length - 1].width
+          : vfStave.getX() + 20;
+
+        while (rightEdge < needRightmostX) {
+          const specs = generateRandomNoteSpecs(MEASURE_NOTES);
+          const x = rightEdge + (measures.length ? GAP_PX : 0);
+          const m = createMeasure(specs, x);
+          measures.push(m);
+          rightEdge = m.startX + m.width;
+        }
+      }
+
+      function cullOffscreen() {
+        const leftCut = vfStave.getX() - 120;
+        while (
+          measures.length &&
+          measures[0].startX + measures[0].width + innerX < leftCut
+        ) {
+          const m = measures.shift();
+          m.div.remove();
+        }
+      }
+
+      function updatePassChecks() {
+        for (const m of measures) {
+          while (m.passedIndex + 1 < m.noteXs.length) {
+            const localX = m.noteXs[m.passedIndex + 1];
+            const noteAbs = m.startX + innerX + localX;
+            if (noteAbs <= playheadRightAbsX) {
+              m.passedIndex += 1;
+              colorNotePassed(m, m.passedIndex);
+            } else break;
+          }
+        }
+      }
+
+      function scrollStep(ts) {
+        if (!lastTs) lastTs = ts;
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+
+        innerX -= SCROLL_SPEED_PX_S * dt;
+
+        for (const m of measures) {
+          m.div.style.transform = `translateX(${m.startX + innerX}px)`;
+        }
+
+        ensureUpcoming();
+        cullOffscreen();
+        updatePassChecks();
+
+        requestAnimationFrame(scrollStep);
+      }
+
+      function drawBase() {
+        const host = document.getElementById("vf");
+        const w = Math.max(360, host.clientWidth | 0);
+        const h = Math.max(160, host.clientHeight | 0);
+        host.innerHTML = "";
+
+        vfRenderer = new VF.Renderer(host, VF.Renderer.Backends.SVG);
+        vfRenderer.resize(w, h);
+        vfContext = vfRenderer.getContext();
+        vfContext.setFont("Arial", 10);
+
+        const staveY = Math.max(10, (h - 100) / 2);
+        vfStave = new VF.Stave(12, staveY, w - 24);
+        vfStave.addClef("treble").addTimeSignature("4/4");
+        vfStave.setContext(vfContext).draw();
+
+        // Overlays
+        const playhead = document.createElement("div");
+        playhead.className = "playhead";
+        const fadeLeft = document.createElement("div");
+        fadeLeft.className = "fade-left";
+        host.appendChild(playhead);
+        host.appendChild(fadeLeft);
+
+        // RIGHT EDGE is 200px from staff start
+        const staffLeftAbs = vfStave.getX();
+        playheadRightAbsX = staffLeftAbs + PLAYHEAD_RIGHT_OFFSET_PX;
+        playheadLeftAbsX = playheadRightAbsX - PLAYHEAD_WIDTH;
+        playhead.style.left = `${playheadLeftAbsX}px`;
+
+        // Reset rolling state
+        measures = [];
+        innerX = 0;
+        lastTs = 0;
+
+        // At least one full measure before first note reaches the playhead
+        const tempInnerW = Math.max(
+          300,
+          Math.round((vfStave.getWidth() - 40) / 2)
+        );
+        const firstMeasureStart = playheadRightAbsX + tempInnerW + GAP_PX;
+        const m1 = createMeasure(generateRandomNoteSpecs(), firstMeasureStart);
+        const m2 = createMeasure(
+          generateRandomNoteSpecs(),
+          m1.startX + m1.width + GAP_PX
+        );
+        measures.push(m1, m2);
+        ensureUpcoming();
+
+        requestAnimationFrame(scrollStep);
+      }
+
+      function redrawAll() {
+        drawBase();
+      }
+
+      /* ===========================
+         Boot
+      ============================ */
+      function getVFNamespace() {
+        return window.__VF || null;
+      }
+      function initVexWhenReady() {
+        const ns = getVFNamespace();
+        if (ns) {
+          VF = ns;
+          drawBase();
+        } else {
+          setTimeout(initVexWhenReady, 100);
+        }
+      }
+
+      // Graph + Viz init + resize
+      gctx = elGraph.getContext("2d");
+      resizeGraph();
+      resizeViz();
+      window.addEventListener("resize", () => {
+        resizeGraph();
+        resizeViz();
+        redrawAll();
+      });
+
+      // Mute toggle
+      function setMuteUI(muted) {
+        isMuted = muted;
+        elMute.classList.toggle("muted", muted);
+        elMute.classList.toggle("unmuted", !muted);
+        elMute.setAttribute("aria-pressed", String(muted));
+        const icon = elMute.querySelector("i");
+        if (muted) {
+          icon.className = "fa-solid fa-microphone";
+          elMute.setAttribute("aria-label", "Unmute");
+        } else {
+          icon.className = "fa-solid fa-microphone-slash";
+          elMute.setAttribute("aria-label", "Mute");
+        }
+      }
+      elMute.addEventListener("click", async () => {
+        if (isMuted) {
+          await start();
+          setMuteUI(false);
+        } else {
+          stop();
+          setMuteUI(true);
+        }
+      });
+      setMuteUI(true);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          stop();
+          setMuteUI(true);
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        resizeViz(); // full-viewport visualizer immediately
+        seedBlobs(); // scatter
+        const ns = getVFNamespace();
+        if (ns) {
+          VF = ns;
+          drawBase();
+        } else {
+          initVexWhenReady();
+        }
+      });
+    </script>
+  </body>
+</html>

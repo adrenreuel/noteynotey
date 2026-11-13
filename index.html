@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noteynotey</title>
+    <meta name="color-scheme" content="light dark" />
+    <!-- Paints the theme's background before the stylesheet loads, so a reload doesn't flash white. -->
+    <style>
+      html { background: #f3ecdd; }
+      @media (prefers-color-scheme: dark) { html { background: #000; } }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400..700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Wordmark only, so the request is limited to the letters it uses. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@600&text=noteynotey0123456789STARHE&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Linked here, not imported from main.ts, so it loads before the first paint (the dev server would otherwise inject it late and flash unstyled HTML). -->
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <canvas class="note-drift" id="note-drift" aria-hidden="true" hidden></canvas>
+    <div class="app">
+      <header class="topbar">
+        <!-- Starts hidden, with the streak and level in home's stats, so nothing flashes here before main.ts runs (showScreen moves them). -->
+        <button type="button" class="brand" id="brand" aria-label="noteynotey, go home" hidden>noteynotey</button>
+        <div class="topbar-end" id="topbar-end"></div>
+      </header>
+
+      <main class="screen home" data-screen="home" hidden>
+        <h1 class="home-wordmark">noteynotey</h1>
+        <p class="home-slogan">So you can sight-read, ey?</p>
+        <div class="home-stats" id="home-stats">
+          <span class="day-streak" id="day-streak"><span id="day-streak-text">Start a streak</span></span>
+          <div class="level" id="level">
+            <!-- The chip is its own XP bar: a marigold layer with a dark copy of the label, clipped to the progress. -->
+            <span class="level-badge" id="level-badge">
+              <span class="level-label" id="level-label">Level 1</span>
+              <span class="level-fill" id="xp-fill" aria-hidden="true"><span class="level-label" id="level-label-fill">Level 1</span></span>
+            </span>
+          </div>
+        </div>
+
+        <!-- The daily challenge: one button. Past challenges will be reached from the challenge itself. -->
+        <button type="button" class="daily" id="daily-play">
+          <span class="daily-art" aria-hidden="true"><svg class="daily-keys" viewBox="0 0 362 102"><g class="daily-keys-white"><rect x="1" y="1" width="24" height="100" rx="3"/><rect x="25" y="1" width="24" height="100" rx="3"/><rect x="49" y="1" width="24" height="100" rx="3"/><rect x="73" y="1" width="24" height="100" rx="3"/><rect x="97" y="1" width="24" height="100" rx="3"/><rect x="121" y="1" width="24" height="100" rx="3"/><rect x="145" y="1" width="24" height="100" rx="3"/><rect x="169" y="1" width="24" height="100" rx="3"/><rect x="193" y="1" width="24" height="100" rx="3"/><rect x="217" y="1" width="24" height="100" rx="3"/><rect x="241" y="1" width="24" height="100" rx="3"/><rect x="265" y="1" width="24" height="100" rx="3"/><rect x="289" y="1" width="24" height="100" rx="3"/><rect x="313" y="1" width="24" height="100" rx="3"/><rect x="337" y="1" width="24" height="100" rx="3"/></g><g class="daily-keys-black"><rect x="18" y="1" width="14" height="60" rx="2"/><rect x="42" y="1" width="14" height="60" rx="2"/><rect x="90" y="1" width="14" height="60" rx="2"/><rect x="114" y="1" width="14" height="60" rx="2"/><rect x="138" y="1" width="14" height="60" rx="2"/><rect x="186" y="1" width="14" height="60" rx="2"/><rect x="210" y="1" width="14" height="60" rx="2"/><rect x="258" y="1" width="14" height="60" rx="2"/><rect x="282" y="1" width="14" height="60" rx="2"/><rect x="306" y="1" width="14" height="60" rx="2"/></g></svg><span class="daily-sparkle daily-sparkle-1"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-2"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-3"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-4"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-5"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-6"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span><span class="daily-sparkle daily-sparkle-7"><svg viewBox="0 0 24 24"><path d="M12 0C12.6 7 17 11.4 24 12C17 12.6 12.6 17 12 24C11.4 17 7 12.6 0 12C7 11.4 11.4 7 12 0Z"/></svg></span></span>
+          <span class="date-page" aria-hidden="true">
+            <span class="date-page-month" id="daily-month"></span>
+            <span class="date-page-day" id="daily-day"></span>
+            <span class="date-page-weekday" id="daily-weekday"></span>
+          </span>
+          <span class="daily-text">
+            <span class="daily-title">Daily Challenge</span>
+            <span class="daily-meta">Same notes for everyone today</span>
+            <span class="daily-meta">Next challenge in <strong id="daily-countdown"></strong></span>
+          </span>
+          <span class="daily-go" id="daily-go">Play</span>
+        </button>
+
+        <section class="home-section" aria-label="Ways to play">
+          <div class="mode-grid" id="mode-grid"></div>
+        </section>
+
+        <section class="card skill-strip" id="skill-strip-card">
+          <!-- No visible heading: the whole card opens the profile. This button is for keyboards and screen readers. -->
+          <button type="button" class="skill-strip-open visually-hidden" id="skills-link">Open skill map</button>
+          <div id="skill-strip"></div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-swatch is-mastered"></span>Perfetto</span>
+            <span class="legend-item"><span class="legend-swatch is-learning"></span>Comfortable</span>
+            <span class="legend-item"><span class="legend-swatch is-tricky"></span>Needs work</span>
+            <span class="legend-item"><span class="legend-swatch is-new"></span>Undiscovered</span>
+          </div>
+        </section>
+      </main>
+
+      <!-- A round of practice -->
+      <main class="screen session" data-screen="session" hidden>
+        <section class="practice" id="practice">
+          <!-- The round's key, Random by default (every mode but Flash Notes, which is in C) -->
+          <div class="round-tools" id="round-tools" hidden>
+            <button type="button" class="key-pick" id="key-pick" aria-haspopup="dialog"></button>
+          </div>
+          <div class="round-head">
+            <button type="button" class="link-btn round-exit" id="end-btn">
+              <span class="chevron-left" aria-hidden="true"></span>Exit<kbd class="key-hint" aria-hidden="true">Esc</kbd>
+            </button>
+            <div class="round-status">
+              <div class="round-info">
+                <span class="session-meta" id="session-meta"></span>
+                <span class="session-key" id="session-key" hidden></span>
+              </div>
+              <div class="round-ticks" id="round-ticks" aria-hidden="true"></div>
+            </div>
+          </div>
+          <h1 class="visually-hidden" id="session-mode"></h1>
+
+          <div class="staff-card" id="staff-card">
+            <div class="staff" id="staff"></div>
+            <div class="beat-strip" id="beat-strip" hidden></div>
+          </div>
+        </section>
+
+        <section class="card summary" id="summary" hidden>
+          <h2 class="summary-title" id="summary-title">Round complete</h2>
+          <div class="round-ticks is-large" id="summary-ticks" role="img"></div>
+          <p class="summary-text" id="summary-text"></p>
+          <div class="summary-actions">
+            <button type="button" class="btn btn-ghost" id="summary-home">Home</button>
+            <button type="button" class="btn btn-primary" id="summary-again">Play again</button>
+          </div>
+        </section>
+      </main>
+
+      <!-- Profile: the full skill map, for now -->
+      <main class="screen skills" data-screen="skills" hidden>
+        <h1 class="visually-hidden">Profile</h1>
+        <button type="button" class="link-btn round-exit profile-back" id="skills-back">
+          <span class="chevron-left" aria-hidden="true"></span>Back<kbd class="key-hint" aria-hidden="true">Esc</kbd>
+        </button>
+        <section class="card skillmap">
+          <div class="skill-map" id="skill-map"></div>
+        </section>
+      </main>
+
+      <section class="keyboard-dock" id="keyboard-dock" aria-label="On-screen keyboard" hidden>
+        <!-- The piano input and a toggle for the keys, centered just above them -->
+        <div class="dock-controls">
+          <button type="button" class="piano-trigger" id="piano-trigger" aria-haspopup="dialog">
+            <span class="piano-trigger-icon" id="piano-trigger-icon" aria-hidden="true"></span>
+            <span class="piano-source" id="piano-source"></span>
+            <span class="mini-meter" aria-hidden="true"><span class="mini-meter-fill" data-level data-gated></span></span>
+          </button>
+          <button type="button" class="keys-toggle" id="keys-toggle" aria-controls="dock-keys"></button>
+        </div>
+        <div class="dock-keys" id="dock-keys">
+          <div class="dock-clip">
+            <div class="dock-panel">
+              <div class="piano" id="piano"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Home only: what you're playing on, always in reach -->
+      <footer class="piano-footer" id="piano-footer" hidden>
+        <div class="piano-footer-inner">
+          <!-- Every input's icon in the piano sheet's order: the current one on a paper tile, the others muted, as a hint that there are more. -->
+          <span class="piano-footer-icons" id="piano-footer-icons" aria-hidden="true">
+            <span class="piano-footer-icon" id="piano-footer-icon"></span>
+          </span>
+          <div class="piano-footer-info">
+            <span class="piano-footer-label" id="piano-footer-label">Playing on</span>
+            <button type="button" class="piano-footer-pick" id="piano-change" aria-haspopup="dialog">
+              <span class="piano-footer-name" id="piano-footer-name"></span>
+              <span class="visually-hidden" id="piano-footer-change">, change</span>
+              <span class="piano-footer-caret" id="piano-footer-caret" aria-hidden="true"></span>
+            </button>
+          </div>
+          <div class="piano-footer-side">
+            <span class="piano-footer-status" id="piano-footer-status"></span>
+          </div>
+          <div class="piano-footer-actions">
+            <span class="mic-toggle-wrap">
+              <span class="mic-off-callout" id="mic-off-callout" hidden>Your mic is off</span>
+              <button type="button" class="btn btn-ghost btn-small btn-metered" id="piano-mic-toggle" data-mic-toggle aria-describedby="mic-off-callout">
+                <span class="btn-meter" aria-hidden="true">
+                  <span class="btn-meter-fill" data-level></span>
+                </span>
+                <span class="btn-content"></span>
+              </button>
+            </span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Choose and manage the piano -->
+    <dialog class="sheet" id="piano-sheet" aria-labelledby="sheet-title">
+      <button type="button" class="back-btn sheet-close" id="sheet-done" aria-label="Close"></button>
+      <div class="panel-view" data-view="choose">
+        <div class="panel-intro">
+          <h2 class="panel-heading" id="sheet-title">Input</h2>
+          <p class="panel-hint">Choose how you'll play</p>
+        </div>
+        <div class="choice-row">
+          <button type="button" class="choice-btn" id="choice-mic" data-pick="mic" aria-pressed="false">
+            <span class="choice-icon" aria-hidden="true"></span>
+            <span class="mode-title">Piano<br />via Mic</span>
+            <span class="choice-check" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="choice-btn" id="choice-midi" data-pick="midi" aria-pressed="false">
+            <span class="choice-icon" aria-hidden="true"></span>
+            <span class="mode-title">MIDI<br />Keyboard</span>
+            <span class="choice-check" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="choice-btn" id="choice-screen" data-pick="screen" aria-pressed="false">
+            <span class="choice-icon" aria-hidden="true"></span>
+            <span class="mode-title">On-screen<br />Keyboard</span>
+            <span class="choice-check" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-view" data-view="mic" hidden>
+        <div class="view-head">
+          <button type="button" class="back-link" data-view-go="choose">
+            <span class="chevron-left" aria-hidden="true"></span>
+            Change input
+          </button>
+          <h2 class="panel-heading">Piano via Mic</h2>
+        </div>
+        <span class="panel-sub" id="mic-status"></span>
+        <div class="panel-notice" id="mic-notice" hidden>
+          <p class="panel-notice-text" id="mic-notice-text"></p>
+          <button type="button" class="btn btn-primary btn-small" id="mic-retry">Try again</button>
+        </div>
+        <div class="panel-actions">
+          <button type="button" class="btn btn-ghost btn-small" id="add-piano">Add a piano</button>
+          <button type="button" class="btn btn-ghost btn-small" id="mic-toggle" data-mic-toggle>Disconnect audio</button>
+        </div>
+        <div class="profile-list" id="profile-list"></div>
+      </div>
+
+      <div class="panel-view" data-view="midi" hidden>
+        <div class="view-head">
+          <button type="button" class="back-link" data-view-go="choose">
+            <span class="chevron-left" aria-hidden="true"></span>
+            Change input
+          </button>
+          <h2 class="panel-heading">MIDI Keyboard</h2>
+        </div>
+        <span class="panel-sub" id="midi-status"></span>
+        <div class="panel-notice" id="midi-notice" hidden>
+          <p class="panel-notice-text" id="midi-notice-text"></p>
+          <button type="button" class="btn btn-primary btn-small" id="midi-retry">Try again</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Add or retune an acoustic piano -->
+    <!-- Pick the rounds' key, or Random -->
+    <dialog class="sheet key-sheet" id="key-dialog" aria-labelledby="key-title">
+      <button type="button" class="back-btn sheet-close" id="key-close" aria-label="Close"></button>
+      <h2 class="panel-heading" id="key-title">Key</h2>
+      <div class="key-choices" id="key-choices"></div>
+    </dialog>
+
+    <!-- Octaves and Chords with the on-screen keys: they need notes played together, so this points to the input sheet. -->
+    <dialog class="dialog" id="stack-dialog" aria-labelledby="stack-title" aria-describedby="stack-text">
+      <button type="button" class="back-btn sheet-close" id="stack-close" aria-label="Close"></button>
+      <h2 class="dialog-title" id="stack-title">Hmm...</h2>
+      <p class="dialog-text" id="stack-text">You need a physical piano or keyboard to play this mode. Switch your input to “Piano&nbsp;via&nbsp;Mic” or “MIDI&nbsp;Keyboard” (or you can play another game mode!)</p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="stack-ok" autofocus>Okay</button>
+        <button type="button" class="btn btn-green" id="stack-switch">Switch input</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog" id="tune-dialog" aria-labelledby="tune-title">
+      <h2 class="dialog-title" id="tune-title">Add a piano</h2>
+      <label class="field" id="tune-name-field">
+        <span class="field-label">Name</span>
+        <input class="field-input" id="tune-name" type="text" maxlength="40" />
+      </label>
+      <p class="dialog-text" id="tune-text"></p>
+      <div class="meter" aria-hidden="true">
+        <div class="meter-fill" data-level></div>
+        <div class="meter-gate" data-gate></div>
+      </div>
+      <div class="progress" aria-hidden="true"><div class="progress-fill" id="tune-fill"></div></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost" id="tune-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="tune-start">Start</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
